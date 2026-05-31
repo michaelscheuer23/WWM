@@ -8,7 +8,7 @@ from Questions import QUESTIONS
 # --- Konfiguration & Mobile-First-Design ---
 st.set_page_config(page_title="Religions-Quiz: Millionär", page_icon="💸", layout="centered")
 
-# --- CSS HACK: Radikale mobile Optimierung & Joker-Design ---
+# --- CSS HACK: Kreisrunde Joker nebeneinander erzwingen ---
 st.markdown(
     """
     <style>
@@ -49,24 +49,50 @@ st.markdown(
         font-weight: bold;
     }
 
-    /* NEU: Komplett eigenständiges Design für die Joker-Chips */
-    div[data-testid="stHorizontalBlock"] .stButton>button {
-        min-height: 40px !important;
-        height: 40px !important;
-        font-size: 13px !important;
-        font-weight: normal !important;
-        border-radius: 20px !important; /* Macht sie rundlicher */
-        background-color: #2b2d42 !definition;
-        color: #adb5bd !important;
-        border: 1px solid #6c757d !important;
-        padding: 0 10px !important;
-        box-shadow: none !important;
+    /* NEU: Zwingt die Joker-Spalten, IMMER horizontal nebeneinander zu bleiben */
+    div[data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        gap: 15px !important;
+        width: 100% !important;
     }
-    /* Wenn ein Joker benutzt/deaktiviert wurde */
+    
+    div[data-testid="stHorizontalBlock"] > div {
+        flex: 0 1 auto !important;
+        width: auto !important;
+        min-width: auto !important;
+    }
+
+    /* Perfekt kreisrunde Joker-Chips */
+    div[data-testid="stHorizontalBlock"] .stButton>button {
+        width: 60px !important;
+        max-width: 60px !important;
+        height: 60px !important;
+        min-height: 60px !important;
+        border-radius: 50% !important; /* Macht den Button zum perfekten Kreis */
+        font-size: 18px !important; /* Größe der Emojis */
+        padding: 0 !important;
+        background-color: #2b2d42 !important;
+        color: #adb5bd !important;
+        border: 2px solid #6c757d !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Hover für aktive Joker-Kreise */
+    div[data-testid="stHorizontalBlock"] .stButton>button:hover:not(:disabled) {
+        border-color: #fca311 !important;
+        color: #fca311 !important;
+    }
+
+    /* Verbrauchte Joker: Ausgegraut und gestrichelt */
     div[data-testid="stHorizontalBlock"] .stButton>button:disabled {
         background-color: #161a1d !important;
         color: #3d4146 !important;
-        border: 1px dashed #3d4146 !important;
+        border: 2px dashed #3d4146 !important;
+        opacity: 0.5;
     }
 
     .mobile-status {
@@ -285,21 +311,22 @@ elif not st.session_state.game_over:
             st.success(f"🎉 **Sicherheitsstufe erreicht!** {cel} gehören dir!")
         st.session_state.celebration = None
 
-    # NEU: Unaufdringliche, graue Joker-Chips direkt über der Frage platziert
+    # REPARIERT: Kreisrunde Joker-Münzen, die bombensicher nebeneinander stehen bleiben
+    # Wir nutzen reduzierte Titel (nur Emojis), damit sie perfekt in die Kreise passen
     j1, j2, j3 = st.columns(3)
     with j1:
-        if st.button("⚖️ 50:50", disabled=not st.session_state.jokers["5050"], use_container_width=True):
+        if st.button("50:50", disabled=not st.session_state.jokers["5050"], help="50:50 Joker", use_container_width=True):
             use_5050(); st.rerun()
     with j2:
-        if st.button("👥 Publikum", disabled=not st.session_state.jokers["audience"], use_container_width=True):
+        if st.button("👥", disabled=not st.session_state.jokers["audience"], help="Publikumsjoker", use_container_width=True):
             use_audience(); st.rerun()
     with j3:
-        if st.button("☎️ Telefon", disabled=not st.session_state.jokers["phone"], use_container_width=True):
+        if st.button("☎️", disabled=not st.session_state.jokers["phone"], help="Telefonjoker", use_container_width=True):
             st.session_state.jokers["phone"] = False
             st.session_state.phone_result = q.get("hint", "Keine Ahnung...")
             st.rerun()
 
-    # Joker-Hilfen dezent dazwischenschieben
+    # Joker-Hilfen daziwschenschieben
     if st.session_state.audience_result:
         st.write("📊 *Publikumstendenz:*")
         for opt, pct in st.session_state.audience_result.items(): 
@@ -309,10 +336,10 @@ elif not st.session_state.game_over:
 
     st.markdown("---")
     
-    # Die Frage steht jetzt im klaren Fokus
+    # Die Frage
     st.subheader(q["text"])
     
-    # Große, daumenfreundliche Antwortblöcke untereinander
+    # Große Antwortblöcke untereinander
     opts = q["shuffled_options"]
     active_opts = st.session_state.active_options or opts
     
