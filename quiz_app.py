@@ -8,7 +8,7 @@ from Questions import QUESTIONS
 # --- Konfiguration & Mobile-First-Design ---
 st.set_page_config(page_title="Religions-Quiz: Millionär", page_icon="💸", layout="centered")
 
-# --- CSS HACK: Radikale Optimierung für Smartphones ---
+# --- CSS HACK: Radikale mobile Optimierung & Joker-Design ---
 st.markdown(
     """
     <style>
@@ -19,7 +19,6 @@ st.markdown(
         background-color: #0e1117;
     }
     
-    /* Hauptcontainer-Abstände für Mobilgeräte reduzieren */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
@@ -27,7 +26,7 @@ st.markdown(
         padding-right: 0.5rem !important;
     }
     
-    /* Antwort-Buttons extrem kompakt und daumenfreundlich */
+    /* Große, markante Antwort-Buttons */
     .stButton>button {
         min-height: 60px !important;
         font-size: 16px !important;
@@ -39,20 +38,10 @@ st.markdown(
         margin-bottom: 0.2rem !important;
         transition: all 0.2s ease;
     }
-    
-    /* Joker-Buttons kleiner gestalten */
-    div[data-testid="stHorizontalBlock"] .stButton>button {
-        min-height: 45px !important;
-        font-size: 14px !important;
-        border-radius: 12px;
-        padding: 0.2rem !important;
-    }
-    
     .stButton>button:hover {
         border-color: #fca311;
         color: #fca311;
     }
-    
     .stButton>button[kind="primary"] {
         background: linear-gradient(90deg, #fca311, #ffb703);
         color: #14213d;
@@ -60,7 +49,26 @@ st.markdown(
         font-weight: bold;
     }
 
-    /* Schicke, kompakte Status-Leiste oben */
+    /* NEU: Komplett eigenständiges Design für die Joker-Chips */
+    div[data-testid="stHorizontalBlock"] .stButton>button {
+        min-height: 40px !important;
+        height: 40px !important;
+        font-size: 13px !important;
+        font-weight: normal !important;
+        border-radius: 20px !important; /* Macht sie rundlicher */
+        background-color: #2b2d42 !definition;
+        color: #adb5bd !important;
+        border: 1px solid #6c757d !important;
+        padding: 0 10px !important;
+        box-shadow: none !important;
+    }
+    /* Wenn ein Joker benutzt/deaktiviert wurde */
+    div[data-testid="stHorizontalBlock"] .stButton>button:disabled {
+        background-color: #161a1d !important;
+        color: #3d4146 !important;
+        border: 1px dashed #3d4146 !important;
+    }
+
     .mobile-status {
         background-color: #1a1a2e;
         padding: 10px;
@@ -259,12 +267,12 @@ elif not st.session_state.game_over:
     lvl = st.session_state.current_level
     q = st.session_state.game_questions[lvl - 1]
     
-    # NEU: Schlanke, mobile Statusleiste statt riesiger Sidebar
+    # Schlanke Statusleiste
     st.markdown(
         f"""
         <div class='mobile-status'>
-            <span style='color: #8d99ae; font-size: 14px;'>Frage {lvl}/15</span><br>
-            <span style='color: #fca311; font-size: 20px; font-weight: bold;'>Es geht um: {MONEY_TREE[lvl]}</span>
+            <span style='color: #8d99ae; font-size: 13px;'>Frage {lvl}/15 • {q['level']}</span><br>
+            <span style='color: #fca311; font-size: 18px; font-weight: bold;'>Gewinnstufe: {MONEY_TREE[lvl]}</span>
         </div>
         """, 
         unsafe_allow_html=True
@@ -276,11 +284,8 @@ elif not st.session_state.game_over:
             st.balloons()
             st.success(f"🎉 **Sicherheitsstufe erreicht!** {cel} gehören dir!")
         st.session_state.celebration = None
-    
-    # Frage direkt anzeigen
-    st.subheader(q["text"])
-    
-    # JOKER-LEISTE (Kompakt nebeneinander)
+
+    # NEU: Unaufdringliche, graue Joker-Chips direkt über der Frage platziert
     j1, j2, j3 = st.columns(3)
     with j1:
         if st.button("⚖️ 50:50", disabled=not st.session_state.jokers["5050"], use_container_width=True):
@@ -294,20 +299,23 @@ elif not st.session_state.game_over:
             st.session_state.phone_result = q.get("hint", "Keine Ahnung...")
             st.rerun()
 
-    # Joker-Ergebnisse schlank einblenden
+    # Joker-Hilfen dezent dazwischenschieben
     if st.session_state.audience_result:
+        st.write("📊 *Publikumstendenz:*")
         for opt, pct in st.session_state.audience_result.items(): 
             st.progress(pct / 100, text=f"{opt}: {pct}%")
     if st.session_state.phone_result:
         st.info(f"☎️: \"{st.session_state.phone_result}\"")
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("---")
     
-    # ANTWORT-BUTTONS (Direkt untereinander/Kompakt auf Mobile)
+    # Die Frage steht jetzt im klaren Fokus
+    st.subheader(q["text"])
+    
+    # Große, daumenfreundliche Antwortblöcke untereinander
     opts = q["shuffled_options"]
     active_opts = st.session_state.active_options or opts
     
-    # Für Mobile ist untereinander oft übersichtlicher als ein gepresstes 2x2 Grid
     for i, letter in enumerate(["A", "B", "C", "D"]):
         if st.button(f"{letter}: {opts[i]}", disabled=(opts[i] not in active_opts), use_container_width=True):
             check_answer(opts[i])
@@ -315,11 +323,10 @@ elif not st.session_state.game_over:
 
     st.markdown("---")
     
-    # Gewinnleiter als ausklappbares Info-Element ans Ende setzen
-    with st.expander("💰 Gesamte Gewinnleiter anzeigen"):
+    with st.expander("💰 Gewinnleiter ansehen"):
         for i in range(15, 0, -1):
-            if i == lvl: st.write(f"👉 **{MONEY_TREE[i]}** (Aktuell)")
-            elif i in [5, 10]: st.write(f"🛡️ {MONEY_TREE[i]} (Sicherheitsstufe)")
+            if i == lvl: st.write(f"👉 **{MONEY_TREE[i]}**")
+            elif i in [5, 10]: st.write(f"🛡️ {MONEY_TREE[i]}")
             elif i < lvl: st.write(f"✓ {MONEY_TREE[i]}")
             else: st.write(MONEY_TREE[i])
             
@@ -346,7 +353,6 @@ else:
         save_highscore(st.session_state.user_name, st.session_state.won_amount, st.session_state.duration)
         st.session_state.score_saved = True
 
-    # Lern-Tagebuch kompakt halten
     with st.expander("📚 Deine Fragen in dieser Runde ansehen"):
         for h in st.session_state.history_log:
             if h["is_correct"]:
