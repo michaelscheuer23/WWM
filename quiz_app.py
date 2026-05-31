@@ -8,7 +8,7 @@ from Questions import QUESTIONS
 # --- Konfiguration & Mobile-First-Design ---
 st.set_page_config(page_title="Religions-Quiz: Millionär", page_icon="💸", layout="centered")
 
-# --- CSS HACK: WWM-Animationen für richtige/falsche Antworten ---
+# --- CSS HACK: WWM-Animationen & 2x2 Layout ---
 st.markdown(
     """
     <style>
@@ -28,46 +28,59 @@ st.markdown(
     
     /* Standard Antwort-Buttons */
     .stButton>button {
-        min-height: 60px !important;
+        min-height: 65px !important;
         font-size: 16px !important;
         font-weight: 600;
         border-radius: 20px;
         background-color: #1a1a2e;
         color: #e6e6e6;
         border: 2px solid #4a4e69;
-        margin-bottom: 0.2rem !important;
+        margin-bottom: 0.4rem !important;
         transition: all 0.2s ease;
     }
     
-    /* Hover für normale Buttons */
+    /* Hover für normale Buttons (nur wenn sie aktiv sind) */
     .stButton>button:hover:not(:disabled) {
         border-color: #fca311;
         color: #fca311;
+        transform: scale(1.02);
     }
 
-    /* --- ANIMATIONEN FÜR DIE AUFLÖSUNG --- */
+    /* --- DIE WWM-ANIMATIONEN --- */
+    /* Überschreibt Streamlits Ausgrau-Effekt für den geklickten Button */
+    .correct-clicked button:disabled, 
+    .wrong-clicked button:disabled {
+        opacity: 1 !important; 
+        cursor: default !important;
+    }
+
     @keyframes wwm-blink-correct {
-        0%, 40%, 80% { background-color: #fca311; color: #14213d; border-color: #fff; }
-        20%, 60% { background-color: #1a1a2e; color: #e6e6e6; border-color: #4a4e69; }
-        100% { background-color: #198754; color: white; border-color: #06d6a0; box-shadow: 0 0 20px #06d6a0; }
+        0%   { background-color: #fca311 !important; border-color: #fff !important; color: #14213d !important; opacity: 1 !important;}
+        15%  { background-color: #1a1a2e !important; border-color: #fca311 !important; color: #fca311 !important; opacity: 1 !important;}
+        30%  { background-color: #fca311 !important; border-color: #fff !important; color: #14213d !important; opacity: 1 !important;}
+        45%  { background-color: #1a1a2e !important; border-color: #fca311 !important; color: #fca311 !important; opacity: 1 !important;}
+        60%  { background-color: #fca311 !important; border-color: #fff !important; color: #14213d !important; opacity: 1 !important;}
+        75%, 100% { background-color: #198754 !important; border-color: #06d6a0 !important; color: white !important; box-shadow: 0 0 25px #06d6a0 !important; opacity: 1 !important; transform: scale(1.03) !important;}
     }
 
     @keyframes wwm-blink-wrong {
-        0%, 40%, 80% { background-color: #fca311; color: #14213d; border-color: #fff; }
-        20%, 60% { background-color: #1a1a2e; color: #e6e6e6; border-color: #4a4e69; }
-        100% { background-color: #dc3545; color: white; border-color: #ff4d6d; box-shadow: 0 0 20px #ff4d6d; }
+        0%   { background-color: #fca311 !important; border-color: #fff !important; color: #14213d !important; opacity: 1 !important;}
+        15%  { background-color: #1a1a2e !important; border-color: #fca311 !important; color: #fca311 !important; opacity: 1 !important;}
+        30%  { background-color: #fca311 !important; border-color: #fff !important; color: #14213d !important; opacity: 1 !important;}
+        45%  { background-color: #1a1a2e !important; border-color: #fca311 !important; color: #fca311 !important; opacity: 1 !important;}
+        60%  { background-color: #fca311 !important; border-color: #fff !important; color: #14213d !important; opacity: 1 !important;}
+        75%, 100% { background-color: #dc3545 !important; border-color: #ff4d6d !important; color: white !important; box-shadow: 0 0 25px #ff4d6d !important; opacity: 1 !important; transform: scale(1.03) !important;}
     }
 
-    /* Diese Klassen werden dynamisch auf den geklickten Button gelegt */
-    .correct-clicked > button {
-        animation: wwm-blink-correct 2.5s forwards !important;
+    /* Zuweisung der Animation (läuft 3 Sekunden) */
+    .correct-clicked button, .correct-clicked button:disabled {
+        animation: wwm-blink-correct 3s linear forwards !important;
+    }
+    .wrong-clicked button, .wrong-clicked button:disabled {
+        animation: wwm-blink-wrong 3s linear forwards !important;
     }
 
-    .wrong-clicked > button {
-        animation: wwm-blink-wrong 2.5s forwards !important;
-    }
-
-    /* Joker-Münzen-Design */
+    /* --- KREISRUNDE JOKER NEBENEINANDER --- */
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -91,6 +104,13 @@ st.markdown(
         background-color: #2b2d42 !important;
         color: #adb5bd !important;
         border: 2px solid #6c757d !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    div[data-testid="stHorizontalBlock"] .stButton>button:hover:not(:disabled) {
+        border-color: #fca311 !important;
+        color: #fca311 !important;
     }
     div[data-testid="stHorizontalBlock"] .stButton>button:disabled {
         background-color: #161a1d !important;
@@ -204,7 +224,7 @@ def use_audience():
     st.session_state.audience_result = results
 
 def process_eval(selected):
-    """Verarbeitet das tatsächliche Ergebnis nach dem künstlichen Delay"""
+    """Wertet die gelockte Antwort nach Ablauf der Dramatik-Zeit aus."""
     q = st.session_state.game_questions[st.session_state.current_level - 1]
     correct = q["answer"]
     
@@ -301,7 +321,6 @@ elif not st.session_state.game_over:
     lvl = st.session_state.current_level
     q = st.session_state.game_questions[lvl - 1]
     
-    # Schlanke Statusleiste
     st.markdown(
         f"""
         <div class='mobile-status'>
@@ -319,17 +338,17 @@ elif not st.session_state.game_over:
             st.success(f"🎉 **Sicherheitsstufe erreicht!** {cel} gehören dir!")
         st.session_state.celebration = None
 
-    # Joker-Münzen (Gesperrt während der Einlogg-Animation)
+    # Die perfekten runden Joker-Kreise (gesperrt bei Animation)
     jokers_disabled = st.session_state.lock_choice is not None
     j1, j2, j3 = st.columns(3)
     with j1:
-        if st.button("50:50", disabled=jokers_disabled or not st.session_state.jokers["5050"], use_container_width=True):
+        if st.button("50:50", disabled=jokers_disabled or not st.session_state.jokers["5050"], help="Zwei Antworten streichen", use_container_width=True):
             use_5050(); st.rerun()
     with j2:
-        if st.button("👥", disabled=jokers_disabled or not st.session_state.jokers["audience"], use_container_width=True):
+        if st.button("👥", disabled=jokers_disabled or not st.session_state.jokers["audience"], help="Das Publikum befragen", use_container_width=True):
             use_audience(); st.rerun()
     with j3:
-        if st.button("☎️", disabled=jokers_disabled or not st.session_state.jokers["phone"], use_container_width=True):
+        if st.button("☎️", disabled=jokers_disabled or not st.session_state.jokers["phone"], help="Jemanden anrufen", use_container_width=True):
             st.session_state.jokers["phone"] = False
             st.session_state.phone_result = q.get("hint", "Keine Ahnung...")
             st.rerun()
@@ -344,38 +363,48 @@ elif not st.session_state.game_over:
     st.markdown("---")
     st.subheader(q["text"])
     
-    # ANTWORT-BUTTONS
     opts = q["shuffled_options"]
     active_opts = st.session_state.active_options or opts
     
-    for i, letter in enumerate(["A", "B", "C", "D"]):
-        current_option = opts[i]
+    # 2x2 GRID FÜR DIE ANTWORTEN (A & B oben, C & D unten)
+    colA, colB = st.columns(2)
+    
+    def render_answer_button(col, letter, index):
+        current_option = opts[index]
         is_btn_disabled = (current_option not in active_opts) or (st.session_state.lock_choice is not None)
         
-        # Bestimme die CSS-Klasse für den ausgewählten Button
         btn_class = " "
         if st.session_state.lock_choice == current_option:
             if current_option == q["answer"]:
                 btn_class = "correct-clicked"
             else:
                 btn_class = "wrong-clicked"
-        
-        # Rendere den Button in seinem spezifischen Animations-Container
-        st.markdown(f"<div class='{btn_class}'>", unsafe_allow_html=True)
-        if st.button(f"{letter}: {current_option}", key=f"btn_{letter}", disabled=is_btn_disabled, use_container_width=True):
-            st.session_state.lock_choice = current_option
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+                
+        with col:
+            st.markdown(f"<div class='{btn_class}'>", unsafe_allow_html=True)
+            if st.button(f"{letter}: {current_option}", key=f"btn_{letter}", disabled=is_btn_disabled, use_container_width=True):
+                st.session_state.lock_choice = current_option
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    # --- DER KÜNSTLICHE DELAY ---
-    # Wenn eine Antwort eingeloggt wurde, wartet der Server hier, während das CSS im Browser blinkt
+    # Zeile 1
+    render_answer_button(colA, "A", 0)
+    render_answer_button(colB, "B", 1)
+    
+    # Zeile 2
+    render_answer_button(colA, "C", 2)
+    render_answer_button(colB, "D", 3)
+
+
+    # --- DER SPANNUNGS-DELAY ---
+    # Die App pausiert für 3 Sekunden, damit die CSS-Blink-Animation voll wirken kann
     if st.session_state.lock_choice is not None:
-        time.sleep(2.5) # 2,5 Sekunden zermürbende Wartezeit
+        time.sleep(3.0) 
         process_eval(st.session_state.lock_choice)
         st.rerun()
 
+
     st.markdown("---")
-    
     with st.expander("💰 Gewinnleiter ansehen"):
         for i in range(15, 0, -1):
             if i == lvl: st.write(f"👉 **{MONEY_TREE[i]}**")
