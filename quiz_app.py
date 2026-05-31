@@ -5,10 +5,10 @@ import json
 import os
 from Questions import QUESTIONS 
 
-# --- Konfiguration & WWM-Design ---
-st.set_page_config(page_title="Religions-Quiz: Millionär", page_icon="💸", layout="wide")
+# --- Konfiguration & Mobile-First-Design ---
+st.set_page_config(page_title="Religions-Quiz: Millionär", page_icon="💸", layout="centered")
 
-# --- CSS HACK: Studio-Optik & Mobile-Optimierung ---
+# --- CSS HACK: Radikale Optimierung für Smartphones ---
 st.markdown(
     """
     <style>
@@ -18,44 +18,56 @@ st.markdown(
     .stApp {
         background-color: #0e1117;
     }
+    
+    /* Hauptcontainer-Abstände für Mobilgeräte reduzieren */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    
+    /* Antwort-Buttons extrem kompakt und daumenfreundlich */
     .stButton>button {
-        min-height: 75px;
-        font-size: 18px !important;
+        min-height: 60px !important;
+        font-size: 16px !important;
         font-weight: 600;
-        border-radius: 40px;
+        border-radius: 20px;
         background-color: #1a1a2e;
         color: #e6e6e6;
         border: 2px solid #4a4e69;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        margin-bottom: 0.2rem !important;
+        transition: all 0.2s ease;
     }
+    
+    /* Joker-Buttons kleiner gestalten */
+    div[data-testid="stHorizontalBlock"] .stButton>button {
+        min-height: 45px !important;
+        font-size: 14px !important;
+        border-radius: 12px;
+        padding: 0.2rem !important;
+    }
+    
     .stButton>button:hover {
         border-color: #fca311;
         color: #fca311;
-        box-shadow: 0 0 15px rgba(252, 163, 17, 0.6);
-        transform: scale(1.02);
     }
+    
     .stButton>button[kind="primary"] {
         background: linear-gradient(90deg, #fca311, #ffb703);
         color: #14213d;
         border: none;
         font-weight: bold;
     }
-    .stButton>button[kind="primary"]:hover {
-        background: linear-gradient(90deg, #ffb703, #ffd166);
-        box-shadow: 0 0 20px rgba(252, 163, 17, 0.8);
-        color: #000;
-        transform: scale(1.03);
-    }
-    @keyframes pulse-gold {
-        0% { color: #fca311; text-shadow: 0 0 5px #fca311; }
-        50% { color: #ffd166; text-shadow: 0 0 20px #ffd166; }
-        100% { color: #fca311; text-shadow: 0 0 5px #fca311; }
-    }
-    .current-level {
-        animation: pulse-gold 2s infinite;
-        font-size: 1.2em;
-        font-weight: bold;
+
+    /* Schicke, kompakte Status-Leiste oben */
+    .mobile-status {
+        background-color: #1a1a2e;
+        padding: 10px;
+        border-radius: 15px;
+        text-align: center;
+        border: 1px solid #fca311;
+        margin-bottom: 15px;
     }
     </style>
     """,
@@ -108,10 +120,10 @@ if 'history_log' not in st.session_state: st.session_state.history_log = []
 
 @st.dialog("Willkommen im Studio! 💸")
 def ask_name():
-    st.write("Bevor du auf dem heißen Stuhl Platz nimmst, trage bitte deinen Namen ein:")
+    st.write("Trage bitte deinen Namen ein:")
     name_input = st.text_input("Dein Name:")
-    if st.button("Auf den heißen Stuhl!"):
-        if name_input.strip() == "": st.error("Bitte gib deinen echten Namen ein!")
+    if st.button("Starten"):
+        if name_input.strip() == "": st.error("Bitte gib deinen Namen ein!")
         else:
             st.session_state.user_name = name_input.strip()
             st.rerun()
@@ -120,7 +132,6 @@ if not st.session_state.user_name:
     ask_name()
     st.stop()
 
-# --- Optimierter Publikumsjoker (Berücksichtigt 50:50) ---
 def use_audience():
     st.session_state.jokers["audience"] = False
     q = st.session_state.game_questions[st.session_state.current_level - 1]
@@ -130,7 +141,6 @@ def use_audience():
     base = 70 if lvl <= 5 else (50 if lvl <= 10 else 35)
     correct_pct = random.randint(base, base + 15)
     
-    # Prüfen ob 50:50 aktiv war
     opts = st.session_state.active_options or q["shuffled_options"]
     results = {}
     
@@ -159,7 +169,6 @@ def check_answer(selected):
     q = st.session_state.game_questions[st.session_state.current_level - 1]
     correct = q["answer"]
     
-    # Logge den Versuch für das Lern-Tagebuch am Ende
     st.session_state.history_log.append({
         "question": q["text"],
         "user_ans": selected,
@@ -193,21 +202,20 @@ def check_answer(selected):
         else: st.session_state.won_amount = "0 €"
 
 # --- Header ---
-c1, c2 = st.columns([4, 1])
-c1.write(f"👤 Kandidat/in auf dem Stuhl: **{st.session_state.user_name}**")
-if c2.button("Namen ändern", use_container_width=True):
+c1, c2 = st.columns([3, 1.5])
+c1.caption(f"👤 Spieler: **{st.session_state.user_name}**")
+if c2.button("Name ändern", use_container_width=True):
     st.session_state.user_name = ""
     st.rerun()
-st.markdown("---")
 
 # ==========================================
 # MENÜ: START & HIGHSCORE
 # ==========================================
 if not st.session_state.game_active:
-    st.title("💸 Wer wird Millionär? - Judentum Edition")
-    st.write("15 Fragen aus dem Unterricht trennen dich von der Million. Viel Erfolg!")
+    st.title("💸 Wer wird Millionär?")
+    st.write("15 Fragen zum Judentum trennen dich von der Million!")
     
-    if st.button("🚀 AUF DEN HEISSEN STUHL", use_container_width=True, type="primary"):
+    if st.button("🚀 SPIEL STARTEN", use_container_width=True, type="primary"):
         st.session_state.game_active = True
         st.session_state.game_over = False
         st.session_state.current_level = 1
@@ -237,48 +245,43 @@ if not st.session_state.game_active:
         st.rerun()
 
     st.markdown("---")
-    st.subheader("🏆 Hall of Fame (Top 10)")
+    st.subheader("🏆 Top 5 Highscores")
     scores = load_highscores()
     if scores:
-        for i, s in enumerate(scores[:10]):
-            st.write(f"**{i+1}. {s['name']}** ➡️ **{s['won_amount']}** (⏱️ {s['duration']} Sek.)")
-    else: st.write("Noch keine Einträge. Hol dir die Million!")
+        for i, s in enumerate(scores[:5]):
+            st.write(f"**{i+1}. {s['name']}** ➡️ {s['won_amount']}")
+    else: st.write("Noch keine Einträge.")
 
 # ==========================================
 # DAS SPIEL LÄUFT
 # ==========================================
 elif not st.session_state.game_over:
+    lvl = st.session_state.current_level
+    q = st.session_state.game_questions[lvl - 1]
+    
+    # NEU: Schlanke, mobile Statusleiste statt riesiger Sidebar
+    st.markdown(
+        f"""
+        <div class='mobile-status'>
+            <span style='color: #8d99ae; font-size: 14px;'>Frage {lvl}/15</span><br>
+            <span style='color: #fca311; font-size: 20px; font-weight: bold;'>Es geht um: {MONEY_TREE[lvl]}</span>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+    
     if st.session_state.celebration:
         cel = st.session_state.celebration
         if cel in ["500 €", "16.000 €"]:
             st.balloons()
-            st.markdown(f"<div style='background-color:#198754; color:white; padding:15px; border-radius:10px; text-align:center; font-size:22px; font-weight:bold; margin-bottom:20px;'>🎉 SICHERHEITSSTUFE ERREICHT! Dir sind {cel} absolut sicher!</div>", unsafe_allow_html=True)
-        elif cel == "correct":
-            st.markdown("<div style='background-color:#198754; color:white; padding:15px; border-radius:10px; text-align:center; font-size:20px; font-weight:bold; margin-bottom:20px;'>✅ RICHTIG! Weiter zur nächsten Stufe!</div>", unsafe_allow_html=True)
+            st.success(f"🎉 **Sicherheitsstufe erreicht!** {cel} gehören dir!")
         st.session_state.celebration = None
     
-    st.sidebar.markdown("### 💰 Gewinnleiter")
-    for i in range(15, 0, -1):
-        if i == st.session_state.current_level: st.sidebar.markdown(f"<span class='current-level'>👉 {MONEY_TREE[i]}</span>", unsafe_allow_html=True)
-        elif i in [5, 10]: st.sidebar.markdown(f"<span style='color:#ffd166; font-weight:bold;'>{MONEY_TREE[i]} 🛡️</span>", unsafe_allow_html=True)
-        elif i < st.session_state.current_level: st.sidebar.markdown(f"<span style='color:#06d6a0'>✓ {MONEY_TREE[i]}</span>", unsafe_allow_html=True)
-        else: st.sidebar.markdown(f"<span style='color:#8d99ae'>{MONEY_TREE[i]}</span>", unsafe_allow_html=True)
-            
-    lvl = st.session_state.current_level
-    q = st.session_state.game_questions[lvl - 1]
-    
-    # Atmosphärischer Warnhinweis bei hohen Stufen
-    if lvl > 10:
-        st.markdown("<div style='background-color:#6f0a14; color:white; padding:8px; border-radius:5px; text-align:center; font-weight:bold;'>⚠️ Achtung Zocker-Zone: Ein Fehler wirft dich auf 16.000 € zurück!</div>", unsafe_allow_html=True)
-    elif lvl > 5:
-        st.markdown("<div style='background-color:#3f37c9; color:white; padding:8px; border-radius:5px; text-align:center; font-weight:bold;'>Hier bist du über der ersten Sicherheitsstufe (500 €).</div>", unsafe_allow_html=True)
-
-    st.caption(f"Frage {lvl} von 15 • Kategorie: {q['level']}")
-    st.header(f"Frage für {MONEY_TREE[lvl]}:")
+    # Frage direkt anzeigen
     st.subheader(q["text"])
     
-    st.markdown("<br>", unsafe_allow_html=True)
-    spacer, j1, j2, j3 = st.columns([4, 1.2, 1.2, 1.2])
+    # JOKER-LEISTE (Kompakt nebeneinander)
+    j1, j2, j3 = st.columns(3)
     with j1:
         if st.button("⚖️ 50:50", disabled=not st.session_state.jokers["5050"], use_container_width=True):
             use_5050(); st.rerun()
@@ -288,29 +291,39 @@ elif not st.session_state.game_over:
     with j3:
         if st.button("☎️ Telefon", disabled=not st.session_state.jokers["phone"], use_container_width=True):
             st.session_state.jokers["phone"] = False
-            st.session_state.phone_result = q.get("hint", "Da bin ich überfragt...")
+            st.session_state.phone_result = q.get("hint", "Keine Ahnung...")
             st.rerun()
 
+    # Joker-Ergebnisse schlank einblenden
     if st.session_state.audience_result:
-        st.write("📊 **Das Publikum meint:**")
-        for opt, pct in st.session_state.audience_result.items(): st.progress(pct / 100, text=f"{opt}: {pct}%")
+        for opt, pct in st.session_state.audience_result.items(): 
+            st.progress(pct / 100, text=f"{opt}: {pct}%")
     if st.session_state.phone_result:
-        st.info(f"☎️ **Dein Telefonjoker flüstert:** \"{st.session_state.phone_result}\"")
+        st.info(f"☎️: \"{st.session_state.phone_result}\"")
 
     st.markdown("<br>", unsafe_allow_html=True)
+    
+    # ANTWORT-BUTTONS (Direkt untereinander/Kompakt auf Mobile)
     opts = q["shuffled_options"]
     active_opts = st.session_state.active_options or opts
     
-    colA, colB = st.columns(2)
-    with colA:
-        if st.button(f"A: {opts[0]}", disabled=(opts[0] not in active_opts), use_container_width=True): check_answer(opts[0]); st.rerun()
-        if st.button(f"C: {opts[2]}", disabled=(opts[2] not in active_opts), use_container_width=True): check_answer(opts[2]); st.rerun()
-    with colB:
-        if st.button(f"B: {opts[1]}", disabled=(opts[1] not in active_opts), use_container_width=True): check_answer(opts[1]); st.rerun()
-        if st.button(f"D: {opts[3]}", disabled=(opts[3] not in active_opts), use_container_width=True): check_answer(opts[3]); st.rerun()
+    # Für Mobile ist untereinander oft übersichtlicher als ein gepresstes 2x2 Grid
+    for i, letter in enumerate(["A", "B", "C", "D"]):
+        if st.button(f"{letter}: {opts[i]}", disabled=(opts[i] not in active_opts), use_container_width=True):
+            check_answer(opts[i])
+            st.rerun()
 
     st.markdown("---")
-    if st.button(f"🏃 Aufhören & die sicheren {MONEY_TREE[lvl - 1]} mitnehmen!", type="secondary", use_container_width=True):
+    
+    # Gewinnleiter als ausklappbares Info-Element ans Ende setzen
+    with st.expander("💰 Gesamte Gewinnleiter anzeigen"):
+        for i in range(15, 0, -1):
+            if i == lvl: st.write(f"👉 **{MONEY_TREE[i]}** (Aktuell)")
+            elif i in [5, 10]: st.write(f"🛡️ {MONEY_TREE[i]} (Sicherheitsstufe)")
+            elif i < lvl: st.write(f"✓ {MONEY_TREE[i]}")
+            else: st.write(MONEY_TREE[i])
+            
+    if st.button(f"🏃 Aufhören mit {MONEY_TREE[lvl - 1]}", type="secondary", use_container_width=True):
         st.session_state.game_over = True
         st.session_state.stopped_early = True
         st.session_state.won_amount = MONEY_TREE[lvl - 1]
@@ -318,37 +331,32 @@ elif not st.session_state.game_over:
         st.rerun()
 
 # ==========================================
-# SPIELENDE / AUSWERTUNG & LERN-STAGE
+# SPIELENDE / AUSWERTUNG
 # ==========================================
 else:
-    st.title("🎬 Das Spiel ist vorbei!")
+    st.title("🎬 Spiel vorbei!")
     if st.session_state.current_level > 15:
-        st.balloons(); st.success(f"UNFASSBAR! Du hast alle Fragen gemeistert und bist **MILLIONÄR!** 💰💰💰")
+        st.balloons(); st.success(f"KORREKT! Du bist MILLIONÄR! 💰")
     elif st.session_state.stopped_early:
-        st.info(f"Kluge Entscheidung! Du verlässt die Show freiwillig mit starken **{st.session_state.won_amount}**.")
+        st.info(f"Du gehst freiwillig mit **{st.session_state.won_amount}** nach Hause.")
     else:
-        st.error(f"Schade, das war leider falsch! Du fällst zurück auf **{st.session_state.won_amount}**.")
+        st.error(f"Falsch! Du fällst zurück auf **{st.session_state.won_amount}**.")
 
     if not st.session_state.score_saved:
         save_highscore(st.session_state.user_name, st.session_state.won_amount, st.session_state.duration)
         st.session_state.score_saved = True
 
-    st.write(f"⏱️ Gespielte Zeit: {round(st.session_state.duration, 1)} Sekunden")
-    
-    # NEU: Das didaktische Lern-Tagebuch (Sammelbox für Fehler)
-    st.markdown("---")
-    st.subheader("📚 Dein persönliches Lern-Protokoll")
-    
-    for h in st.session_state.history_log:
-        if h["is_correct"]:
-            st.markdown(f"🔹 **Frage:** {h['question']} ➡️ ✅ *Richtig beantwortet!*")
-        else:
-            with st.expander(f"🔸 **Frage verpasst:** \"{h['question']}\" (Klicke für Erklärung)"):
-                st.write(f"❌ Deine Antwort: *{h['user_ans']}*")
-                st.write(f"🎯 Richtige Antwort: **{h['correct_ans']}**")
-                st.info(f"💡 **Erklärung für den Unterricht:** {h['explanation']}")
+    # Lern-Tagebuch kompakt halten
+    with st.expander("📚 Deine Fragen in dieser Runde ansehen"):
+        for h in st.session_state.history_log:
+            if h["is_correct"]:
+                st.write(f"✅ **Frage:** {h['question']}")
+            else:
+                st.write(f"❌ **Frage:** {h['question']}")
+                st.write(f"• Richtige Antwort: {h['correct_ans']}")
+                st.caption(f"Erklärung: {h['explanation']}")
+                st.write("---")
                 
-    st.markdown("---")
-    if st.button("🔄 Neue Runde starten", use_container_width=True, type="primary"):
+    if st.button("🔄 Neue Runde", use_container_width=True, type="primary"):
         st.session_state.game_active = False
         st.rerun()
