@@ -8,7 +8,7 @@ from Questions import QUESTIONS
 # --- Konfiguration & Mobile-First-Design ---
 st.set_page_config(page_title="Religions-Quiz: Millionär", page_icon="💸", layout="centered")
 
-# --- CSS HACK: Kreisrunde Joker nebeneinander erzwingen ---
+# --- CSS HACK: WWM-Animationen für richtige/falsche Antworten ---
 st.markdown(
     """
     <style>
@@ -26,7 +26,7 @@ st.markdown(
         padding-right: 0.5rem !important;
     }
     
-    /* Große, markante Antwort-Buttons */
+    /* Standard Antwort-Buttons */
     .stButton>button {
         min-height: 60px !important;
         font-size: 16px !important;
@@ -38,18 +38,36 @@ st.markdown(
         margin-bottom: 0.2rem !important;
         transition: all 0.2s ease;
     }
-    .stButton>button:hover {
+    
+    /* Hover für normale Buttons */
+    .stButton>button:hover:not(:disabled) {
         border-color: #fca311;
         color: #fca311;
     }
-    .stButton>button[kind="primary"] {
-        background: linear-gradient(90deg, #fca311, #ffb703);
-        color: #14213d;
-        border: none;
-        font-weight: bold;
+
+    /* --- ANIMATIONEN FÜR DIE AUFLÖSUNG --- */
+    @keyframes wwm-blink-correct {
+        0%, 40%, 80% { background-color: #fca311; color: #14213d; border-color: #fff; }
+        20%, 60% { background-color: #1a1a2e; color: #e6e6e6; border-color: #4a4e69; }
+        100% { background-color: #198754; color: white; border-color: #06d6a0; box-shadow: 0 0 20px #06d6a0; }
     }
 
-    /* NEU: Zwingt die Joker-Spalten, IMMER horizontal nebeneinander zu bleiben */
+    @keyframes wwm-blink-wrong {
+        0%, 40%, 80% { background-color: #fca311; color: #14213d; border-color: #fff; }
+        20%, 60% { background-color: #1a1a2e; color: #e6e6e6; border-color: #4a4e69; }
+        100% { background-color: #dc3545; color: white; border-color: #ff4d6d; box-shadow: 0 0 20px #ff4d6d; }
+    }
+
+    /* Diese Klassen werden dynamisch auf den geklickten Button gelegt */
+    .correct-clicked > button {
+        animation: wwm-blink-correct 2.5s forwards !important;
+    }
+
+    .wrong-clicked > button {
+        animation: wwm-blink-wrong 2.5s forwards !important;
+    }
+
+    /* Joker-Münzen-Design */
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -57,37 +75,23 @@ st.markdown(
         gap: 15px !important;
         width: 100% !important;
     }
-    
     div[data-testid="stHorizontalBlock"] > div {
         flex: 0 1 auto !important;
         width: auto !important;
         min-width: auto !important;
     }
-
-    /* Perfekt kreisrunde Joker-Chips */
     div[data-testid="stHorizontalBlock"] .stButton>button {
         width: 60px !important;
         max-width: 60px !important;
         height: 60px !important;
         min-height: 60px !important;
-        border-radius: 50% !important; /* Macht den Button zum perfekten Kreis */
-        font-size: 18px !important; /* Größe der Emojis */
+        border-radius: 50% !important;
+        font-size: 18px !important;
         padding: 0 !important;
         background-color: #2b2d42 !important;
         color: #adb5bd !important;
         border: 2px solid #6c757d !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
     }
-    
-    /* Hover für aktive Joker-Kreise */
-    div[data-testid="stHorizontalBlock"] .stButton>button:hover:not(:disabled) {
-        border-color: #fca311 !important;
-        color: #fca311 !important;
-    }
-
-    /* Verbrauchte Joker: Ausgegraut und gestrichelt */
     div[data-testid="stHorizontalBlock"] .stButton>button:disabled {
         background-color: #161a1d !important;
         color: #3d4146 !important;
@@ -151,6 +155,7 @@ if 'game_active' not in st.session_state: st.session_state.game_active = False
 if 'game_over' not in st.session_state: st.session_state.game_over = False
 if 'celebration' not in st.session_state: st.session_state.celebration = None
 if 'history_log' not in st.session_state: st.session_state.history_log = []
+if 'lock_choice' not in st.session_state: st.session_state.lock_choice = None
 
 @st.dialog("Willkommen im Studio! 💸")
 def ask_name():
@@ -174,7 +179,6 @@ def use_audience():
     
     base = 70 if lvl <= 5 else (50 if lvl <= 10 else 35)
     correct_pct = random.randint(base, base + 15)
-    
     opts = st.session_state.active_options or q["shuffled_options"]
     results = {}
     
@@ -199,7 +203,8 @@ def use_audience():
                 idx += 1
     st.session_state.audience_result = results
 
-def check_answer(selected):
+def process_eval(selected):
+    """Verarbeitet das tatsächliche Ergebnis nach dem künstlichen Delay"""
     q = st.session_state.game_questions[st.session_state.current_level - 1]
     correct = q["answer"]
     
@@ -234,11 +239,13 @@ def check_answer(selected):
         if lvl > 10: st.session_state.won_amount = "16.000 €"
         elif lvl > 5: st.session_state.won_amount = "500 €"
         else: st.session_state.won_amount = "0 €"
+        
+    st.session_state.lock_choice = None
 
 # --- Header ---
 c1, c2 = st.columns([3, 1.5])
 c1.caption(f"👤 Spieler: **{st.session_state.user_name}**")
-if c2.button("Name ändern", use_container_width=True):
+if c2.button("Name ändern", use_container_width=True, disabled=st.session_state.lock_choice is not None):
     st.session_state.user_name = ""
     st.rerun()
 
@@ -261,6 +268,7 @@ if not st.session_state.game_active:
         st.session_state.score_saved = False
         st.session_state.celebration = None
         st.session_state.history_log = []
+        st.session_state.lock_choice = None
         
         q_sehr_leicht = get_safe_sample([q for q in QUESTIONS if q["level"] == "Sehr Leicht"], 3)
         q_leicht = get_safe_sample([q for q in QUESTIONS if q["level"] == "Leicht"], 3)
@@ -304,29 +312,28 @@ elif not st.session_state.game_over:
         unsafe_allow_html=True
     )
     
-    if st.session_state.celebration:
+    if st.session_state.celebration and st.session_state.lock_choice is None:
         cel = st.session_state.celebration
         if cel in ["500 €", "16.000 €"]:
             st.balloons()
             st.success(f"🎉 **Sicherheitsstufe erreicht!** {cel} gehören dir!")
         st.session_state.celebration = None
 
-    # REPARIERT: Kreisrunde Joker-Münzen, die bombensicher nebeneinander stehen bleiben
-    # Wir nutzen reduzierte Titel (nur Emojis), damit sie perfekt in die Kreise passen
+    # Joker-Münzen (Gesperrt während der Einlogg-Animation)
+    jokers_disabled = st.session_state.lock_choice is not None
     j1, j2, j3 = st.columns(3)
     with j1:
-        if st.button("50:50", disabled=not st.session_state.jokers["5050"], help="50:50 Joker", use_container_width=True):
+        if st.button("50:50", disabled=jokers_disabled or not st.session_state.jokers["5050"], use_container_width=True):
             use_5050(); st.rerun()
     with j2:
-        if st.button("👥", disabled=not st.session_state.jokers["audience"], help="Publikumsjoker", use_container_width=True):
+        if st.button("👥", disabled=jokers_disabled or not st.session_state.jokers["audience"], use_container_width=True):
             use_audience(); st.rerun()
     with j3:
-        if st.button("☎️", disabled=not st.session_state.jokers["phone"], help="Telefonjoker", use_container_width=True):
+        if st.button("☎️", disabled=jokers_disabled or not st.session_state.jokers["phone"], use_container_width=True):
             st.session_state.jokers["phone"] = False
             st.session_state.phone_result = q.get("hint", "Keine Ahnung...")
             st.rerun()
 
-    # Joker-Hilfen daziwschenschieben
     if st.session_state.audience_result:
         st.write("📊 *Publikumstendenz:*")
         for opt, pct in st.session_state.audience_result.items(): 
@@ -335,18 +342,37 @@ elif not st.session_state.game_over:
         st.info(f"☎️: \"{st.session_state.phone_result}\"")
 
     st.markdown("---")
-    
-    # Die Frage
     st.subheader(q["text"])
     
-    # Große Antwortblöcke untereinander
+    # ANTWORT-BUTTONS
     opts = q["shuffled_options"]
     active_opts = st.session_state.active_options or opts
     
     for i, letter in enumerate(["A", "B", "C", "D"]):
-        if st.button(f"{letter}: {opts[i]}", disabled=(opts[i] not in active_opts), use_container_width=True):
-            check_answer(opts[i])
+        current_option = opts[i]
+        is_btn_disabled = (current_option not in active_opts) or (st.session_state.lock_choice is not None)
+        
+        # Bestimme die CSS-Klasse für den ausgewählten Button
+        btn_class = " "
+        if st.session_state.lock_choice == current_option:
+            if current_option == q["answer"]:
+                btn_class = "correct-clicked"
+            else:
+                btn_class = "wrong-clicked"
+        
+        # Rendere den Button in seinem spezifischen Animations-Container
+        st.markdown(f"<div class='{btn_class}'>", unsafe_allow_html=True)
+        if st.button(f"{letter}: {current_option}", key=f"btn_{letter}", disabled=is_btn_disabled, use_container_width=True):
+            st.session_state.lock_choice = current_option
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # --- DER KÜNSTLICHE DELAY ---
+    # Wenn eine Antwort eingeloggt wurde, wartet der Server hier, während das CSS im Browser blinkt
+    if st.session_state.lock_choice is not None:
+        time.sleep(2.5) # 2,5 Sekunden zermürbende Wartezeit
+        process_eval(st.session_state.lock_choice)
+        st.rerun()
 
     st.markdown("---")
     
@@ -357,7 +383,7 @@ elif not st.session_state.game_over:
             elif i < lvl: st.write(f"✓ {MONEY_TREE[i]}")
             else: st.write(MONEY_TREE[i])
             
-    if st.button(f"🏃 Aufhören mit {MONEY_TREE[lvl - 1]}", type="secondary", use_container_width=True):
+    if st.button(f"🏃 Aufhören mit {MONEY_TREE[lvl - 1]}", type="secondary", use_container_width=True, disabled=st.session_state.lock_choice is not None):
         st.session_state.game_over = True
         st.session_state.stopped_early = True
         st.session_state.won_amount = MONEY_TREE[lvl - 1]
